@@ -1,0 +1,49 @@
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content %}
+
+<div class="section1">
+<h1>Recomendation for you</h1>
+      <ul class="list-group list-group-flush" id="rec_notes">
+        {% for note_info in recommended_notes %}
+        <li class="list-group-item">
+          {{ note_info.User.first_name }}
+          <p>
+          {{ note_info.Note.data }}
+          <div>
+            {{ note_info.Note.subscribers.count() }}
+            <input type="checkbox" id="liked_top" name="liked_top" onclick="likeNote({{ note_info.Note.id }})"
+            {% if user in note_info.Note.subscribers %} checked {% endif %}>
+            <label for="liked">Like it</label>
+          </div>
+          </button>
+        </li>
+
+        {% endfor %}
+      </ul>
+</div>
+
+<div class="section2">
+    <h1>Public notes</h1>
+      <ul class="list-group list-group-flush" id="notes">
+        {% for note_info in public_notes %}
+        <li class="list-group-item">
+          {{ note_info.User.first_name }}
+          <p>
+          {{ note_info.Note.data }}
+          <div>
+            {{ note_info.Note.subscribers.count() }}
+            <input type="checkbox" id="liked" name="liked" onclick="likeNote({{ note_info.Note.id }})"
+            {% if user in note_info.Note.subscribers %} checked {% endif %}>
+            <label for="liked">Like it</label>
+          </div>
+          </button>
+        </li>
+
+        {% endfor %}
+      </ul>
+  </div>
+
+
+
+</form>
+{% endblock %}
+
