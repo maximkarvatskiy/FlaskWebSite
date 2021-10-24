@@ -9,7 +9,7 @@
           <p>
           {{ note_info.Note.data }}
           <div>
-            {{ note_info.Note.subscribers.count() }}
+            Rating - {{ note_info.Note.subscribers.count() }}
             <input type="checkbox" id="liked_top" name="liked_top" onclick="likeNote({{ note_info.Note.id }})"
             {% if user in note_info.Note.subscribers %} checked {% endif %}>
             <label for="liked">Like it</label>
@@ -30,10 +30,10 @@
           <p>
           {{ note_info.Note.data }}
           <div>
-            {{ note_info.Note.subscribers.count() }}
+            Rating - {{ note_info.Note.subscribers.count() }}
             <input type="checkbox" id="liked" name="liked" onclick="likeNote({{ note_info.Note.id }})"
             {% if user in note_info.Note.subscribers %} checked {% endif %}>
-            <label for="liked">Like it</label>
+            <p><label for="liked"> Like it </label></p>
           </div>
           </button>
         </li>

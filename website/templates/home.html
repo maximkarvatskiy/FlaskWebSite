@@ -4,7 +4,6 @@
   {% for note in user.notes %}
   <li class="list-group-item">
     {{ note.data }}
-    {{ user.id }}
     <div>
       <input type="checkbox" id="is_public" name="is_public" onclick="updateNote({{ note.id }})"
       {% if note.is_public %} checked {% endif %}>
