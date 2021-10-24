@@ -1,4 +1,3 @@
-import sqlalchemy
 import sqlite3 as sql
 import pandas as pd
 import numpy as np
@@ -14,50 +13,52 @@ ITEMS_NUM_TO_RECOMMEND = 5
 database = 'website/database.db'
 connection = sql.connect(database)
 
-query = '''SELECT * FROM subs'''
-records_df = pd.read_sql_query(query, connection)
 
+class Recommender:
+    def __init__(self):
+        self.model = KernelMF(n_epochs=20, n_factors=10, verbose=0, lr=0.001)
 
-class Recommender():
-    def __init__(self, user_id_for_recommendation):
-        self.user_id_for_recommendation = user_id_for_recommendation
-        self.generated_data = pd.DataFrame()
-        self.model = KernelMF(n_epochs=20, n_factors=2, verbose=1, lr=0.001)
-
-    def fit(self, data, user_column, item_column):
-        self.generate_possible_combinations(data, user_column, item_column)
-        self.generate_target(data)
-        self.extract_data_for_user()
-
-        x_train = self.generated_data.drop(TARGET, axis=1)
-        y_train = self.generated_data[TARGET]
-        self.model.fit(x_train, y_train)
+    def fit(self, x, y):
+        self.model.fit(x, y)
         return self
 
     def recommend(self, user_id=1):
-        return self.model.recommend(user=1, amount=ITEMS_NUM_TO_RECOMMEND)[ITEM_ID_COLUMN].to_list()
-
-    def generate_possible_combinations(self, data, user_column, item_column):
-        self.generated_data = pd.DataFrame(itertools.product(data[user_column].unique(), data[item_column].unique()),
-                                           columns=[USER_ID_COLUMN, ITEM_ID_COLUMN])
-        return self
-
-    def generate_target(self, data):
-        target = list()
-        existed_values = data.values.tolist()
-        for idx, value in enumerate(self.generated_data[[USER_ID_COLUMN, ITEM_ID_COLUMN]].values.tolist()):
-            target.append(1) if value in existed_values else target.append(0)
-        self.generated_data[TARGET] = target
-        return self
-
-    def extract_data_for_user(self):
-        self.generated_data = self.generated_data[
-            (self.generated_data[USER_ID_COLUMN] != self.user_id_for_recommendation) |
-            (self.generated_data[TARGET] != 0)]
-        return self
+        return self.model.recommend(user=user_id, amount=ITEMS_NUM_TO_RECOMMEND)[ITEM_ID_COLUMN].to_list()
 
 
-recommender = Recommender(user_id_for_recommendation=1)
-recommender.fit(data=records_df, user_column='user_id', item_column='note_id')
+def generate_not_filled_data(data, user_column, item_column):
+    generated_data = pd.DataFrame(itertools.product(data[user_column].unique(), data[item_column].unique()),
+                                  columns=[USER_ID_COLUMN, ITEM_ID_COLUMN])
+    return generated_data
 
-pickle.dump(recommender, open('website/recommender.pickle', 'wb'))
+
+def calculate_target(full_data, initial_data):
+    target = list()
+    existed_values = initial_data.values.tolist()
+    for idx, value in enumerate(full_data[[USER_ID_COLUMN, ITEM_ID_COLUMN]].values.tolist()):
+        target.append(1) if value in existed_values else target.append(0)
+    full_data[TARGET] = target
+    return full_data
+
+
+def extract_data_for_user(generated_data, user_id_for_recommendation):
+    generated_data = generated_data[
+        (generated_data[USER_ID_COLUMN] != user_id_for_recommendation) |
+        (generated_data[TARGET] != 0)]
+    return generated_data
+
+
+query = '''SELECT * FROM subs'''
+filled_notes_df = pd.read_sql_query(query, connection)
+
+generated_data = generate_not_filled_data(filled_notes_df, 'user_id', 'note_id')
+generated_data_with_target = calculate_target(generated_data, filled_notes_df)
+generated_data_without_user = extract_data_for_user(generated_data_with_target, user_id_for_recommendation=1)
+
+x_train = generated_data_without_user.drop(TARGET, axis=1)
+y_train = generated_data_without_user[TARGET]
+
+recommender = Recommender()
+recommender.fit(x_train, y_train)
+print('do')
+pickle.dump(recommender, open('model.pickle', 'wb'))
